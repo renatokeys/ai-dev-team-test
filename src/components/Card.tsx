@@ -25,7 +25,7 @@ export function Card({ card, onDelete }: CardProps) {
   return (
     <article className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-3">
       <button
-        onClick={() => onDelete(card.id)}
+        onClick={() => { if (window.confirm(`Delete "${card.title}"?`)) { onDelete(card.id); } }}
         aria-label={`Delete ${card.title}`}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 focus:opacity-100 w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
       >

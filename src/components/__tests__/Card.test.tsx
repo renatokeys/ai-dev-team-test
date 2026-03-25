@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Card } from '../Card';
 import type { Card as CardType } from '../../types';
 
@@ -17,6 +17,16 @@ function makeCard(overrides: Partial<CardType> = {}): CardType {
 }
 
 describe('Card', () => {
+  let confirmSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    confirmSpy = vi.spyOn(window, 'confirm');
+  });
+
+  afterEach(() => {
+    confirmSpy.mockRestore();
+  });
+
   it('renders title, description, and creation date', () => {
     const card = makeCard();
     render(<Card card={card} onDelete={vi.fn()} />);
@@ -50,8 +60,20 @@ describe('Card', () => {
     expect(screen.queryByRole('paragraph')).not.toBeInTheDocument();
   });
 
-  it('calls onDelete with card id when delete button is clicked', async () => {
+  it('shows confirmation dialog when delete button is clicked', async () => {
     const user = userEvent.setup();
+    confirmSpy.mockReturnValue(false);
+    const card = makeCard();
+    render(<Card card={card} onDelete={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /delete test card/i }));
+
+    expect(confirmSpy).toHaveBeenCalledWith('Delete "Test Card"?');
+  });
+
+  it('calls onDelete when user confirms deletion', async () => {
+    const user = userEvent.setup();
+    confirmSpy.mockReturnValue(true);
     const onDelete = vi.fn();
     const card = makeCard({ id: 'card-42' });
     render(<Card card={card} onDelete={onDelete} />);
@@ -60,6 +82,18 @@ describe('Card', () => {
 
     expect(onDelete).toHaveBeenCalledWith('card-42');
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onDelete when user cancels deletion', async () => {
+    const user = userEvent.setup();
+    confirmSpy.mockReturnValue(false);
+    const onDelete = vi.fn();
+    const card = makeCard();
+    render(<Card card={card} onDelete={onDelete} />);
+
+    await user.click(screen.getByRole('button', { name: /delete test card/i }));
+
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it('has accessible delete button with descriptive label', () => {
