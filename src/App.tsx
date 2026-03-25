@@ -1,14 +1,19 @@
+import { Board } from './components/Board';
+import { useBoardState } from './hooks/useBoardState';
+
 function App() {
+  const { getColumnCards } = useBoardState();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+    <div className="h-screen flex flex-col bg-gray-50">
+      <header className="flex items-center px-4 py-3 bg-white border-b border-gray-200">
+        <h1 className="text-lg font-bold text-gray-900">
           Trello-Style TODO Board
         </h1>
-        <p className="text-lg text-gray-600">
-          Vite + React + TypeScript + Tailwind CSS
-        </p>
-      </div>
+      </header>
+      <main className="flex-1 overflow-hidden">
+        <Board getColumnCards={getColumnCards} />
+      </main>
     </div>
   );
 }
