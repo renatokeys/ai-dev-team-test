@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { Card as CardType } from '../types';
 
 function formatRelativeDate(dateString: string): string {
@@ -19,13 +21,43 @@ function formatRelativeDate(dateString: string): string {
 interface CardProps {
   card: CardType;
   onDelete: (cardId: string) => void;
+  isDragOverlay?: boolean;
 }
 
-export function Card({ card, onDelete }: CardProps) {
+export function Card({ card, onDelete, isDragOverlay }: CardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id, data: { card } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Delete "${card.title}"?`)) {
+      onDelete(card.id);
+    }
+  };
+
   return (
-    <article className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-3">
+    <article
+      ref={isDragOverlay ? undefined : setNodeRef}
+      style={isDragOverlay ? { opacity: 0.8 } : style}
+      className={`relative group bg-white rounded shadow-sm p-3 hover:shadow-md transition-shadow ${isDragOverlay ? 'shadow-lg rotate-2 cursor-grabbing' : 'cursor-grab'}`}
+      {...(isDragOverlay ? {} : attributes)}
+      {...(isDragOverlay ? {} : listeners)}
+    >
       <button
-        onClick={() => { if (window.confirm(`Delete "${card.title}"?`)) { onDelete(card.id); } }}
+        onClick={handleDelete}
+        onPointerDown={(e) => e.stopPropagation()}
         aria-label={`Delete ${card.title}`}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 focus:opacity-100 w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
       >

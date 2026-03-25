@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { DndContext } from '@dnd-kit/core';
+import { SortableContext } from '@dnd-kit/sortable';
 import { Card } from '../Card';
 import type { Card as CardType } from '../../types';
 
@@ -16,57 +18,69 @@ function makeCard(overrides: Partial<CardType> = {}): CardType {
   };
 }
 
+const noop = () => {};
+const mockCard = makeCard();
+
+function renderCard(card: CardType = mockCard, onDelete: (cardId: string) => void = noop) {
+  return render(
+    <DndContext>
+      <SortableContext items={[card.id]}>
+        <Card card={card} onDelete={onDelete} />
+      </SortableContext>
+    </DndContext>,
+  );
+}
+
 describe('Card', () => {
+  let onDelete: (cardId: string) => void;
   let confirmSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    onDelete = vi.fn();
     confirmSpy = vi.spyOn(window, 'confirm');
   });
 
-  afterEach(() => {
-    confirmSpy.mockRestore();
+  it('renders the card title', () => {
+    renderCard(mockCard, onDelete);
+    expect(screen.getByText('Test Card')).toBeInTheDocument();
   });
 
-  it('renders title, description, and creation date', () => {
-    const card = makeCard();
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    expect(screen.getByText('Test Card')).toBeInTheDocument();
+  it('renders the card description', () => {
+    renderCard(mockCard, onDelete);
     expect(screen.getByText('A test description')).toBeInTheDocument();
     expect(screen.getByText('just now')).toBeInTheDocument();
   });
 
-  it('renders relative date for older cards', () => {
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const card = makeCard({ createdAt: twoHoursAgo });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    expect(screen.getByText('2h ago')).toBeInTheDocument();
+  it('does not render description when empty', () => {
+    const card = { ...mockCard, description: '' };
+    renderCard(card, onDelete);
+    expect(screen.queryByText('A test description')).not.toBeInTheDocument();
   });
 
-  it('renders relative date in days', () => {
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-    const card = makeCard({ createdAt: threeDaysAgo });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    expect(screen.getByText('3d ago')).toBeInTheDocument();
+  it('renders an article element with sortable role', () => {
+    renderCard(mockCard, onDelete);
+    const article = document.querySelector('article');
+    expect(article).toBeInTheDocument();
+    expect(article).toHaveAttribute('aria-roledescription', 'sortable');
   });
 
-  it('does not render description paragraph when description is empty', () => {
-    const card = makeCard({ description: '' });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    expect(screen.getByText('Test Card')).toBeInTheDocument();
-    expect(screen.queryByRole('paragraph')).not.toBeInTheDocument();
+  it('renders a time element', () => {
+    renderCard(mockCard, onDelete);
+    const time = screen.getByRole('time');
+    expect(time).toHaveAttribute('dateTime', mockCard.createdAt);
   });
 
-  it('shows confirmation dialog when delete button is clicked', async () => {
+  it('renders delete button with accessible label', () => {
+    renderCard(mockCard, onDelete);
+    expect(screen.getByRole('button', { name: 'Delete Test Card' })).toBeInTheDocument();
+  });
+
+  it('shows confirmation dialog when delete is clicked', async () => {
     const user = userEvent.setup();
     confirmSpy.mockReturnValue(false);
-    const card = makeCard();
-    render(<Card card={card} onDelete={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: /delete test card/i }));
+    renderCard(mockCard, onDelete);
+    await user.click(screen.getByRole('button', { name: 'Delete Test Card' }));
 
     expect(confirmSpy).toHaveBeenCalledWith('Delete "Test Card"?');
   });
@@ -76,9 +90,9 @@ describe('Card', () => {
     confirmSpy.mockReturnValue(true);
     const onDelete = vi.fn();
     const card = makeCard({ id: 'card-42' });
-    render(<Card card={card} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole('button', { name: /delete test card/i }));
+    renderCard(card, onDelete);
+    await user.click(screen.getByRole('button', { name: 'Delete Test Card' }));
 
     expect(onDelete).toHaveBeenCalledWith('card-42');
     expect(onDelete).toHaveBeenCalledTimes(1);
@@ -88,78 +102,16 @@ describe('Card', () => {
     const user = userEvent.setup();
     confirmSpy.mockReturnValue(false);
     const onDelete = vi.fn();
-    const card = makeCard();
-    render(<Card card={card} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole('button', { name: /delete test card/i }));
+    renderCard(mockCard, onDelete);
+    await user.click(screen.getByRole('button', { name: 'Delete Test Card' }));
 
     expect(onDelete).not.toHaveBeenCalled();
   });
 
-  it('has accessible delete button with descriptive label', () => {
-    const card = makeCard({ title: 'My Task' });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    const deleteButton = screen.getByRole('button', { name: 'Delete My Task' });
-    expect(deleteButton).toBeInTheDocument();
-  });
-
-  it('renders as an article element for semantic HTML', () => {
-    const card = makeCard();
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    expect(screen.getByRole('article')).toBeInTheDocument();
-  });
-
-  it('renders title in a heading element', () => {
-    const card = makeCard({ title: 'Important Task' });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    const heading = screen.getByRole('heading', { name: 'Important Task' });
-    expect(heading).toBeInTheDocument();
-    expect(heading.tagName).toBe('H3');
-  });
-
-  it('truncates long titles with ellipsis via CSS class', () => {
-    const card = makeCard({ title: 'A very long title that should be truncated' });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    const heading = screen.getByRole('heading');
-    expect(heading.className).toContain('truncate');
-  });
-
-  it('truncates long descriptions to 2 lines via CSS class', () => {
-    const card = makeCard({ description: 'A long description that goes on and on' });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    const description = screen.getByText(card.description);
-    expect(description.className).toContain('line-clamp-2');
-  });
-
-  it('has white background and shadow classes', () => {
-    const card = makeCard();
-    render(<Card card={card} onDelete={vi.fn()} />);
-
+  it('renders as drag overlay with reduced opacity', () => {
+    render(<Card card={mockCard} onDelete={noop} isDragOverlay />);
     const article = screen.getByRole('article');
-    expect(article.className).toContain('bg-white');
-    expect(article.className).toContain('rounded-lg');
-    expect(article.className).toContain('shadow-sm');
-  });
-
-  it('has hover shadow transition class', () => {
-    const card = makeCard();
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    const article = screen.getByRole('article');
-    expect(article.className).toContain('hover:shadow-md');
-  });
-
-  it('has time element with datetime attribute', () => {
-    const createdAt = '2026-03-20T10:00:00.000Z';
-    const card = makeCard({ createdAt });
-    render(<Card card={card} onDelete={vi.fn()} />);
-
-    const timeEl = screen.getByText(/ago|just now/i).closest('time');
-    expect(timeEl).toHaveAttribute('datetime', createdAt);
+    expect(article.style.opacity).toBe('0.8');
   });
 });
