@@ -1,66 +1,84 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { Column } from "../Column";
-import type { Card } from "../../types";
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { DndContext } from '@dnd-kit/core';
+import { Column } from '../Column';
+import type { Card } from '../../types';
 
 const makeCard = (overrides: Partial<Card> = {}): Card => ({
   id: crypto.randomUUID(),
-  title: "Test card",
-  description: "",
-  columnId: "backlog",
+  title: 'Test card',
+  description: '',
+  columnId: 'backlog',
   position: 0,
   createdAt: new Date().toISOString(),
   ...overrides,
 });
 
-describe("Column", () => {
-  const noop = vi.fn();
+function renderColumn(props: Partial<Parameters<typeof Column>[0]> = {}) {
+  const defaultProps = {
+    columnId: 'backlog' as const,
+    title: 'Backlog',
+    cards: [] as Card[],
+    onDeleteCard: vi.fn(),
+    ...props,
+  };
+  return render(
+    <DndContext>
+      <Column {...defaultProps} />
+    </DndContext>,
+  );
+}
 
-  it("renders the column title", () => {
-    render(<Column title="Backlog" cards={[]} onDeleteCard={noop} />);
-    expect(screen.getByText("Backlog")).toBeInTheDocument();
+describe('Column', () => {
+  it('renders the column title', () => {
+    renderColumn({ title: 'Backlog' });
+    expect(screen.getByText('Backlog')).toBeInTheDocument();
   });
 
-  it("shows card count badge", () => {
-    const cards = [makeCard(), makeCard()];
-    render(<Column title="Backlog" cards={cards} onDeleteCard={noop} />);
-    expect(screen.getByText("2")).toBeInTheDocument();
+  it('shows card count badge', () => {
+    const cards = [makeCard({ id: '1' }), makeCard({ id: '2' })];
+    renderColumn({ cards });
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it("shows zero count when empty", () => {
-    render(<Column title="Backlog" cards={[]} onDeleteCard={noop} />);
-    expect(screen.getByText("0")).toBeInTheDocument();
+  it('shows zero count when empty', () => {
+    renderColumn();
+    expect(screen.getByText('0')).toBeInTheDocument();
   });
 
-  it("renders empty state message when no cards", () => {
-    render(<Column title="Backlog" cards={[]} onDeleteCard={noop} />);
-    expect(screen.getByText("No cards")).toBeInTheDocument();
+  it('renders empty state message when no cards', () => {
+    renderColumn();
+    expect(screen.getByText('No cards')).toBeInTheDocument();
   });
 
-  it("renders card titles", () => {
+  it('renders card titles', () => {
     const cards = [
-      makeCard({ title: "First task" }),
-      makeCard({ title: "Second task" }),
+      makeCard({ id: '1', title: 'First task' }),
+      makeCard({ id: '2', title: 'Second task' }),
     ];
-    render(<Column title="Backlog" cards={cards} onDeleteCard={noop} />);
-    expect(screen.getByText("First task")).toBeInTheDocument();
-    expect(screen.getByText("Second task")).toBeInTheDocument();
+    renderColumn({ cards });
+    expect(screen.getByText('First task')).toBeInTheDocument();
+    expect(screen.getByText('Second task')).toBeInTheDocument();
   });
 
-  it("has a scrollable card area", () => {
-    render(<Column title="Backlog" cards={[]} onDeleteCard={noop} />);
-    const emptyMsg = screen.getByText("No cards");
+  it('has a scrollable card area', () => {
+    renderColumn();
+    const emptyMsg = screen.getByText('No cards');
     const scrollContainer = emptyMsg.parentElement!;
-    expect(scrollContainer.className).toContain("overflow-y-auto");
+    expect(scrollContainer.className).toContain('overflow-y-auto');
   });
 
-  it("updates card count when cards change", () => {
-    const { rerender } = render(
-      <Column title="Backlog" cards={[makeCard()]} onDeleteCard={noop} />
-    );
-    expect(screen.getByText("1")).toBeInTheDocument();
+  it('highlights when isOver is true', () => {
+    const { container } = renderColumn({ isOver: true });
+    const columnEl = container.firstElementChild!;
+    expect(columnEl.className).toContain('bg-blue-100');
+    expect(columnEl.className).toContain('ring-2');
+  });
 
-    rerender(<Column title="Backlog" cards={[]} onDeleteCard={noop} />);
-    expect(screen.getByText("0")).toBeInTheDocument();
+  it('does not highlight when isOver is false', () => {
+    const { container } = renderColumn({ isOver: false });
+    const columnEl = container.firstElementChild!;
+    expect(columnEl.className).not.toContain('bg-blue-100');
+    expect(columnEl.className).toContain('bg-gray-100');
   });
 });
