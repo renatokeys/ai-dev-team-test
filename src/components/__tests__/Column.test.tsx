@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { DndContext } from '@dnd-kit/core';
 import { Column } from '../Column';
@@ -19,6 +19,7 @@ function renderColumn(props: Partial<Parameters<typeof Column>[0]> = {}) {
     columnId: 'backlog' as const,
     title: 'Backlog',
     cards: [] as Card[],
+    onAddCard: vi.fn(),
     onDeleteCard: vi.fn(),
     ...props,
   };
@@ -80,5 +81,26 @@ describe('Column', () => {
     const columnEl = container.firstElementChild!;
     expect(columnEl.className).not.toContain('bg-blue-100');
     expect(columnEl.className).toContain('bg-gray-100');
+  });
+
+  it('renders "+ Add Card" button', () => {
+    renderColumn();
+    expect(screen.getByText('+ Add Card')).toBeInTheDocument();
+  });
+
+  it('shows inline form when "+ Add Card" is clicked', () => {
+    renderColumn();
+    fireEvent.click(screen.getByText('+ Add Card'));
+    expect(screen.getByPlaceholderText('Card title')).toBeInTheDocument();
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+  });
+
+  it('calls onAddCard when form is submitted with a title', () => {
+    const onAddCard = vi.fn();
+    renderColumn({ onAddCard });
+    fireEvent.click(screen.getByText('+ Add Card'));
+    fireEvent.change(screen.getByPlaceholderText('Card title'), { target: { value: 'New task' } });
+    fireEvent.click(screen.getByText('Add'));
+    expect(onAddCard).toHaveBeenCalledWith('backlog', 'New task', '');
   });
 });

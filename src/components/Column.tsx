@@ -3,16 +3,18 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Card as CardType } from '../types';
 import type { ColumnId } from '../types';
 import { Card } from './Card';
+import { AddCardForm } from './AddCardForm';
 
 interface ColumnProps {
   columnId: ColumnId;
   title: string;
   cards: CardType[];
+  onAddCard: (columnId: ColumnId, title: string, description: string) => void;
   onDeleteCard: (cardId: string) => void;
   isOver?: boolean;
 }
 
-export function Column({ columnId, title, cards, onDeleteCard, isOver }: ColumnProps) {
+export function Column({ columnId, title, cards, onAddCard, onDeleteCard, isOver }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id: columnId });
 
   return (
@@ -33,6 +35,9 @@ export function Column({ columnId, title, cards, onDeleteCard, isOver }: ColumnP
             ))
           )}
         </SortableContext>
+      </div>
+      <div className="p-2 border-t border-gray-200">
+        <AddCardForm columnId={columnId} onAdd={onAddCard} />
       </div>
     </div>
   );
