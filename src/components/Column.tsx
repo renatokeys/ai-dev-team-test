@@ -1,11 +1,13 @@
-import type { Card } from '../types';
+import type { Card as CardType } from '../types';
+import { Card } from './Card';
 
 interface ColumnProps {
   title: string;
-  cards: Card[];
+  cards: CardType[];
+  onDeleteCard: (cardId: string) => void;
 }
 
-export function Column({ title, cards }: ColumnProps) {
+export function Column({ title, cards, onDeleteCard }: ColumnProps) {
   return (
     <div className="flex flex-col flex-1 min-w-0 bg-gray-100 rounded-lg">
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
@@ -19,12 +21,7 @@ export function Column({ title, cards }: ColumnProps) {
           <p className="text-sm text-gray-400 text-center py-4">No cards</p>
         ) : (
           cards.map((card) => (
-            <div
-              key={card.id}
-              className="bg-white rounded shadow-sm p-3 text-sm text-gray-800"
-            >
-              {card.title}
-            </div>
+            <Card key={card.id} card={card} onDelete={onDeleteCard} />
           ))
         )}
       </div>
