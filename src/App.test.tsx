@@ -10,17 +10,12 @@ describe("App", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the tech stack description", () => {
+  it("renders all 5 columns", () => {
     render(<App />);
-    expect(
-      screen.getByText("Vite + React + TypeScript + Tailwind CSS")
-    ).toBeInTheDocument();
-  });
-
-  it("applies Tailwind utility classes", () => {
-    render(<App />);
-    const heading = screen.getByText("Trello-Style TODO Board");
-    expect(heading.className).toContain("text-4xl");
-    expect(heading.className).toContain("font-bold");
+    expect(screen.getByText("Backlog")).toBeInTheDocument();
+    expect(screen.getByText("To Do")).toBeInTheDocument();
+    expect(screen.getByText("In Progress")).toBeInTheDocument();
+    expect(screen.getByText("Review")).toBeInTheDocument();
+    expect(screen.getByText("Done")).toBeInTheDocument();
   });
 });
