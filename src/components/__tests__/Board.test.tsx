@@ -8,7 +8,7 @@ describe('Board', () => {
   const noopMoveCard = vi.fn();
 
   it('renders all 5 column titles', () => {
-    render(<Board getColumnCards={emptyGetColumnCards} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />);
+    render(<Board getColumnCards={emptyGetColumnCards} onAddCard={vi.fn()} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />);
     expect(screen.getByText('Backlog')).toBeInTheDocument();
     expect(screen.getByText('To Do')).toBeInTheDocument();
     expect(screen.getByText('In Progress')).toBeInTheDocument();
@@ -18,7 +18,7 @@ describe('Board', () => {
 
   it('renders columns in a flex row', () => {
     const { container } = render(
-      <Board getColumnCards={emptyGetColumnCards} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />,
+      <Board getColumnCards={emptyGetColumnCards} onAddCard={vi.fn()} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />,
     );
     const boardEl = container.querySelector('.flex.gap-4');
     expect(boardEl).toBeInTheDocument();
@@ -45,6 +45,7 @@ describe('Board', () => {
     render(
       <Board
         getColumnCards={(colId: ColumnId) => mockCards[colId]}
+        onAddCard={vi.fn()}
         onDeleteCard={vi.fn()}
         onMoveCard={noopMoveCard}
       />,
@@ -55,7 +56,7 @@ describe('Board', () => {
 
   it('shows empty state in columns with no cards', () => {
     render(
-      <Board getColumnCards={emptyGetColumnCards} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />,
+      <Board getColumnCards={emptyGetColumnCards} onAddCard={vi.fn()} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />,
     );
     const emptyMessages = screen.getAllByText('No cards');
     expect(emptyMessages).toHaveLength(5);
@@ -64,8 +65,16 @@ describe('Board', () => {
   it('accepts onMoveCard prop', () => {
     const moveCard = vi.fn();
     render(
-      <Board getColumnCards={emptyGetColumnCards} onDeleteCard={vi.fn()} onMoveCard={moveCard} />,
+      <Board getColumnCards={emptyGetColumnCards} onAddCard={vi.fn()} onDeleteCard={vi.fn()} onMoveCard={moveCard} />,
     );
     expect(screen.getByText('Backlog')).toBeInTheDocument();
+  });
+
+  it('renders "+ Add Card" button in each column', () => {
+    render(
+      <Board getColumnCards={emptyGetColumnCards} onAddCard={vi.fn()} onDeleteCard={vi.fn()} onMoveCard={noopMoveCard} />,
+    );
+    const addButtons = screen.getAllByText('+ Add Card');
+    expect(addButtons).toHaveLength(5);
   });
 });

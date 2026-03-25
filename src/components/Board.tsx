@@ -17,11 +17,12 @@ import { Card } from './Card';
 
 interface BoardProps {
   getColumnCards: (columnId: ColumnId) => CardType[];
+  onAddCard: (columnId: ColumnId, title: string, description: string) => void;
   onDeleteCard: (cardId: string) => void;
   onMoveCard: (cardId: string, targetColumnId: ColumnId, targetPosition: number) => void;
 }
 
-export function Board({ getColumnCards, onDeleteCard, onMoveCard }: BoardProps) {
+export function Board({ getColumnCards, onAddCard, onDeleteCard, onMoveCard }: BoardProps) {
   const [activeCard, setActiveCard] = useState<CardType | null>(null);
   const [overColumnId, setOverColumnId] = useState<ColumnId | null>(null);
 
@@ -117,6 +118,7 @@ export function Board({ getColumnCards, onDeleteCard, onMoveCard }: BoardProps) 
             columnId={col.id}
             title={col.title}
             cards={getColumnCards(col.id)}
+            onAddCard={onAddCard}
             onDeleteCard={onDeleteCard}
             isOver={overColumnId === col.id}
           />

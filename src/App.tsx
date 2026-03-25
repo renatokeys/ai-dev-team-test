@@ -2,7 +2,7 @@ import { Board } from './components/Board';
 import { useBoardState } from './hooks/useBoardState';
 
 function App() {
-  const { getColumnCards, deleteCard, moveCard } = useBoardState();
+  const { getColumnCards, addCard, deleteCard, moveCard } = useBoardState();
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -12,7 +12,7 @@ function App() {
         </h1>
       </header>
       <main className="flex-1 overflow-hidden">
-        <Board getColumnCards={getColumnCards} onDeleteCard={deleteCard} onMoveCard={moveCard} />
+        <Board getColumnCards={getColumnCards} onAddCard={addCard} onDeleteCard={deleteCard} onMoveCard={moveCard} />
       </main>
     </div>
   );
